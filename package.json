@@ -1,0 +1,19 @@
+{
+  "name": "projet-veille-technologique",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/wjeam/projet-veille-technologique.git"
+  },
+  "author": "William Jean Mireault",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/wjeam/projet-veille-technologique/issues"
+  },
+  "homepage": "https://github.com/wjeam/projet-veille-technologique#readme"
+}
