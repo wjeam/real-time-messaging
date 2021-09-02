@@ -1,0 +1,20 @@
+User:
+    - id
+    - email
+    - password
+    - username
+    - profileImageSrc
+    - creationDate
+
+Message:
+    - id
+    - content
+    - conversationId
+    - userId 
+    - creationDate
+
+Conversation
+    - title
+    - liste de userId
+    - list de messageId
+    - creationDate
