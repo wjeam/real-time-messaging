@@ -1,6 +1,6 @@
 
 module.exports = (app) => {
-    require('./user_route')(app)
-    require('./conversation_route')(app)
-    require('./message_route')(app)
+    require('./user.route')(app)
+    require('./conversation.route')(app)
+    require('./message.route')(app)
 }
