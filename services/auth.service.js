@@ -13,7 +13,6 @@ exports.validatePassword = async (password, hashedPassword) => {
 
 exports.verifyToken = async(req, res, next) => {
     const token = req.cookies.access_token
-    console.log(token)
     try { 
         const verify = jwt.verify(token, process.env.JWT_SECRET)
         next()
@@ -23,10 +22,10 @@ exports.verifyToken = async(req, res, next) => {
 }
 
 exports.signToken = async (res, _id, email) => {
-    const token = jwt.sign({_id, email}, process.env.JWT_SECRET)
+    const token = jwt.sign({_id, email}, process.env.JWT_SECRET, {expiresIn: 15})
     res.cookie('access_token', token, {
-        maxAge: 600,
+        maxAge: 15,
         httpOnly: true
     })
-    res.status(200).end()
+    res.status(200).send('Welcome, ' + email)
 }

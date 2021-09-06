@@ -6,17 +6,7 @@ const auth = require('./auth.service')
 exports.findAll = async (res) => {
     User.find({})
     .then(users => {
-        console.log(users)
         res.status(200).send(users)
-    })
-    .catch(error => console.error(error))
-}
-
-exports.findOne = async (req, res) => {
-    User.find({ _id: req.params.id })
-    .then(user => {
-        console.log(user)
-        res.status(200).send(user)
     })
     .catch(error => console.error(error))
 }
@@ -60,11 +50,9 @@ exports.login = async (req, res) => {
             auth.validatePassword(req.body.password, user[0].password)
             .then((isValid) => {
                 if(isValid) {
-                    console.log('Welcome, ' + user[0].username)
                     auth.signToken(res, user[0]._id, user[0]._email)
                 } else {
-                    console.log('Password incorrect')
-                    res.status(200).end()
+                    res.status(200).send('Password incorrect')
                 }
             })
             .catch((error) => console.log(error))
