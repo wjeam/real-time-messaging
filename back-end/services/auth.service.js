@@ -11,7 +11,7 @@ exports.validatePassword = async (password, hashedPassword) => {
     return bcrypt.compare(password, hashedPassword)
 }
 
-exports.verifyToken = async(req, res, next) => {
+exports.verifyTokenMiddleware = async(req, res, next) => {
     const token = req.cookies.access_token
     try { 
         const verify = jwt.verify(token, process.env.JWT_SECRET)
@@ -21,11 +21,21 @@ exports.verifyToken = async(req, res, next) => {
     }
 }
 
+exports.verifyToken = async(req, res) => {
+    try {
+        const verify = jwt.verify(req.body.access_token, process.env.JWT_SECRET)
+        res.send(true)
+    } catch(error) {
+        res.send(false)
+    }
+}
+
 exports.signToken = async (res, _id, email) => {
-    const token = jwt.sign({_id, email}, process.env.JWT_SECRET, {expiresIn: 15})
+    const token = jwt.sign({_id, email}, process.env.JWT_SECRET, {expiresIn: 60})
     res.cookie('access_token', token, {
-        maxAge: 15,
-        httpOnly: true
+        maxAge: 1000 * 60 * 15,
+        httpOnly: false,
+        sameSite: true
     })
-    res.status(200).send('Welcome, ' + email)
+    res.send('Welcome, ' + email)
 }

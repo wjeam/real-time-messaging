@@ -50,7 +50,7 @@ exports.login = async (req, res) => {
             auth.validatePassword(req.body.password, user[0].password)
             .then((isValid) => {
                 if(isValid) {
-                    auth.signToken(res, user[0]._id, user[0]._email)
+                    auth.signToken(res, user[0]._id, user[0].email)
                 } else {
                     res.status(200).send('Password incorrect')
                 }

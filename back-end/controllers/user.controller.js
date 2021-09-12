@@ -9,10 +9,6 @@ exports.register = async (req, res) => {
     userService.register(req, res)
 }
 
-exports.register = async (req, res) => {
-    userService.register(req, res)
-}
-
 exports.login = async (req, res) => {
     userService.login(req, res)
 }
