@@ -1,22 +1,9 @@
 import React from 'react'
-import { makeStyles, Grid, Paper, AppBar, Toolbar, List, ListItem, ListItemAvatar, ListItemText } from '@material-ui/core';
-import  {deepOrange, deepPurple, lightBlue, lightGreen, red, blueGrey } from '@material-ui/core/colors';
+import { Grid, Paper, AppBar, Toolbar, List, ListItem, ListItemAvatar, ListItemText, Avatar } from '@mui/material';
+import { styled } from '@mui/material/styles';
+import  { deepOrange, deepPurple, lightBlue, lightGreen, red, blueGrey } from '@mui/material/colors';
 
-const useStyles = makeStyles((theme) => ({
-    toolbar: {
-        minHeight: "50px"
-    },
-    toolbarRight: {
-        marginLeft: "auto"
-    },
-    message: {
-        textOverflow: "ellipsis",
-        whiteSpace: "wrap",
-        overflow: "hidden"
-    }
-}));
-
-const fake = [
+const conversations = [
     {
         initial: "AZ",
         title: "Conversation 1",
@@ -62,12 +49,10 @@ const fake = [
 ]
 
 const Home = () => {
-    const classes = useStyles();
-
     return (
         <div>
             <AppBar position="fixed" color="inherit">
-                <Toolbar className={classes.toolbar}>
+                <Toolbar>
                 </Toolbar>
             </AppBar>
             <Toolbar/>

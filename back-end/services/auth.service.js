@@ -31,7 +31,7 @@ exports.verifyToken = async(req, res) => {
 }
 
 exports.signToken = async (res, _id, email) => {
-    const token = jwt.sign({_id, email}, process.env.JWT_SECRET, {expiresIn: 60})
+    const token = jwt.sign({_id, email}, process.env.JWT_SECRET, {expiresIn: 3600})
     res.cookie('access_token', token, {
         maxAge: 1000 * 60 * 15,
         httpOnly: false,

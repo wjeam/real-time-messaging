@@ -7,12 +7,12 @@ const cookieParser = require('cookie-parser')
 const server = require('http').createServer(app)
 const io = require('socket.io')(server, {
     cors: {
-        origin: 'http://localhost:8080'
+        origin: 'http://localhost:3000'
     }
 })
 
-io.on('connection', (socket) => {
-    // LOGIC ICI
+io.on('connection', (stream) => {
+    console.log('connected!')
 })
 
 app.use(cookieParser())
