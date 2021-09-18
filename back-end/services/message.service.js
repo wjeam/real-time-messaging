@@ -21,3 +21,18 @@ exports.createMessage = async (req, res) => {
         })
     })
 }
+
+exports.findMessagesByConversationId = async(req, res) => {
+    const conversation_id = req.params.conversation_id
+    Message.find(
+        {
+            conversation_id: conversation_id
+        }
+    )
+    .then((messages) => {
+        res.status(200).send(messages)
+    })
+    .catch((error) => {
+        console.error(error)
+    })
+}

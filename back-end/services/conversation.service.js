@@ -35,9 +35,10 @@ exports.insertMessage = async (message) => {
         { _id: message.conversation_id },
         { $push: { messages: message.message_id } }
     )
-    .catch((error) => {
-        console.error(error)
-    })
 }
 
+
+exports.findConversationsByUserId = async (req, res) => {
+    // TBI
+}
 

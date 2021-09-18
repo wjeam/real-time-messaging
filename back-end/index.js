@@ -16,7 +16,6 @@ io.on('connection', (socket) => {
     console.log(socket.id)
     console.log(socket.request._query['user_id'])
 
-
     socket.on('message', (data) => {
         console.log(data)
     })   
@@ -26,10 +25,9 @@ io.on('connection', (socket) => {
     })
 })
 
-
 app.use(cookieParser())
 app.use(cors({
-    origin: 'http://localhost:8080',
+    origin: 'http://localhost:3000',
     credentials: true
 }))
 app.use(express.json())
