@@ -6,33 +6,31 @@ const Conversation = mongoose.model('Conversation')
 exports.createConversation = async (req, res) => {
     conversation = req.body
     Conversation.create(conversation)
-    .then((conversation) => {
-        console.log(conversation)
-        res.status(200).send('Conversation created!')
+    .then(() => {
+        res.status(200)
     })
     .catch((error) => {
         console.error(error)
-        res.status(400).send('Conversation error.')
+        res.status(400)
     })
 }
 
-exports.addUser = async (req, res) => {
+exports.insertUser = async (req, res) => {
     obj = req.body
     Conversation.updateOne(
         { _id: obj.conversation_id },
         { $addToSet: {users: obj.user_id}}
     )
-    .then((conversation) => {
-        console.log(conversation)
-        res.status(200).send('Conversation updated.')
+    .then(() => {
+        res.status(200)
     })
     .catch((error) => {
         console.error(error)
-        res.status(400).send('Conversation update problem.')
+        res.status(400)
     })
 }
 
-exports.addMessage = async (message) => {
+exports.insertMessage = async (message) => {
     return Conversation.updateOne(
         { _id: message.conversation_id },
         { $push: { messages: message.message_id } }

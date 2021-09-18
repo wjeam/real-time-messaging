@@ -17,7 +17,7 @@ exports.verifyTokenMiddleware = async(req, res, next) => {
         const verify = jwt.verify(token, process.env.JWT_SECRET)
         next()
     } catch(error) {
-        res.status(400).send('ACCESS DENIED')
+        res.status(403)
     }
 }
 
@@ -37,5 +37,5 @@ exports.signToken = async (res, _id, email) => {
         httpOnly: false,
         sameSite: true
     })
-    res.send('Welcome, ' + email)
+    res.status(200)
 }

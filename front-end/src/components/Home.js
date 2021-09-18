@@ -1,7 +1,7 @@
-import React from 'react'
-import { Grid, Paper, AppBar, Toolbar, List, ListItem, ListItemAvatar, ListItemText, Avatar } from '@mui/material';
-import { styled } from '@mui/material/styles';
+import React, {useState, useEffect} from 'react'
+import { Grid, Paper, AppBar, Toolbar, List, ListItem, ListItemAvatar, ListItemText, Avatar, Button, TextField, Box, Card, CardActions, CardText, CardContent, Typography, CardHeader} from '@mui/material';
 import  { deepOrange, deepPurple, lightBlue, lightGreen, red, blueGrey } from '@mui/material/colors';
+import { io } from 'socket.io-client';
 
 const conversations = [
     {
@@ -49,6 +49,25 @@ const conversations = [
 ]
 
 const Home = () => {
+    const [socket, setSocket] = useState()
+    const [message, setMessage] = useState('')
+
+    const onMessageChange = e => {
+        setMessage(e.target.value)
+    }
+
+    useEffect(() => {
+        setSocket(io('http://localhost:3030', {query: 'user_id=12345'}))
+        return () => {
+            
+        }
+    }, [])
+
+    function ping() {
+        socket.emit('message', {user_id: '12345', conversation_id: '54321', content: message})
+        console.log('asdf')
+    }
+
     return (
         <div>
             <AppBar position="fixed" color="inherit">
@@ -58,7 +77,7 @@ const Home = () => {
             <Toolbar/>
             <Grid container justifyContent="flex-start">
                 <Grid item xs={6} sm={4} md={3} lg={2} xl={2}>
-                    <Paper square elevation={0}>
+                    <Typography variant="body"aper square elevation={3}>
                         <List>
                             {
                             conversations.map((conversation) => { 
@@ -78,7 +97,41 @@ const Home = () => {
                             })
                             }
                         </List>
-                    </Paper>
+                    </Typography>
+                </Grid>
+                <Grid item xs={6} sm={8} md={9} lg={10} xl={10}>
+                    <Grid container sx={{flexDirection: "column"}}>
+                        <Grid item xs={12} sm={12} md={8} lg={8} xl={5} sx={{textAlign: "start", marginBottom: "10px", alignSelf: "flex-start", ml: 3, mt: 3}}>
+                            <Paper elevation={3} sx={{padding: "5px 10px 5px 10px", mt: "3px", mr: "10px", display: "table"}}>
+                                <Typography variant="body1" style={{color: "black", margin: "5px 0 5px 0"}}>asasdasd aasdsdssasassaddasadsdasdsadsdasadsaddddddds sad asada sdadsadsa ass das dasddsdad</Typography>
+                            </Paper>
+                            <Typography variant="body" style={{color: "black", fontStyle: "italic"}}>Sent @ 11:02</Typography>
+                        </Grid>
+                        <Grid item xs={12} sm={12} md={8} lg={8} xl={5} sx={{textAlign: "end", marginBottom: "10px", alignSelf: "flex-end", mr: 3, mt: 3}}>
+                            <Paper elevation={3} sx={{padding: "5px 10px 5px 10px", mt: "3px", ml: 8, display: "table"}}>
+                                <Typography variant="body1" style={{color: "black", margin: "5px 0 5px 0"}}>dsadsasdadsde</Typography>
+                            </Paper>
+                            <Typography variant="body" style={{color: "black", fontStyle: "italic"}}>Sent @ 11:02</Typography>
+                        </Grid>
+                        <Grid item xs={12} sm={12} md={8} lg={8} xl={5} sx={{textAlign: "end", marginBottom: "10px", alignSelf: "flex-end", mr: 3, mt: 3}}>
+                            <Paper elevation={3} sx={{padding: "5px 10px 5px 10px", mt: "3px", ml: 8, display: "table"}}>
+                                <Typography variant="body1" style={{color: "black", margin: "5px 0 5px 0"}}>aasadsl;lkads; klldasklkl;dsakl;kl;sakl; kl;askl;kl;daslk;kl;daslk;kl;daskl;  klkl  ;dklsk;lasdkl; kl;dkl;kl;</Typography>
+                            </Paper>
+                            <Typography variant="body" style={{color: "black", fontStyle: "italic"}}>Sent @ 11:02</Typography>
+                        </Grid>
+                        <Grid item xs={12} sm={12} md={8} lg={8} xl={5} sx={{textAlign: "end", marginBottom: "10px", alignSelf: "flex-end", mr: 3, mt: 3}}>
+                            <Paper elevation={3} sx={{padding: "5px 10px 5px 10px", mt: "3px", ml: 8, display: "table"}}>
+                                <Typography variant="body1" style={{color: "black", margin: "5px 0 5px 0"}}>allo?</Typography>
+                            </Paper>
+                            <Typography variant="body" style={{color: "black", fontStyle: "italic"}}>Sent @ 11:02</Typography>
+                        </Grid>
+                        <Grid item xs={12} sm={12} md={8} lg={8} xl={5} sx={{textAlign: "start", marginBottom: "10px", alignSelf: "flex-start", ml: 3, mt: 3}}>
+                            <Paper elevation={3} sx={{padding: "5px 10px 5px 10px", mt: "3px", mr: "10px", display: "table"}}>
+                                <Typography variant="body1" style={{color: "black", margin: "5px 0 5px 0"}}>quoi?</Typography>
+                            </Paper>
+                            <Typography variant="body" style={{color: "black", fontStyle: "italic"}}>Sent @ 11:02</Typography>
+                        </Grid>
+                    </Grid>
                 </Grid>
             </Grid>
         </div>

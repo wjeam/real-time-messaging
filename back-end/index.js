@@ -11,9 +11,21 @@ const io = require('socket.io')(server, {
     }
 })
 
-io.on('connection', (stream) => {
-    console.log('connected!')
+io.on('connection', (socket) => {
+    console.log('CONNECTED')
+    console.log(socket.id)
+    console.log(socket.request._query['user_id'])
+
+
+    socket.on('message', (data) => {
+        console.log(data)
+    })   
+    
+    socket.on('disconnect', () => {
+        console.log('DISCONNECTED')
+    })
 })
+
 
 app.use(cookieParser())
 app.use(cors({
