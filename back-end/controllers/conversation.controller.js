@@ -8,3 +8,7 @@ exports.createConversation = async (req, res) => {
 exports.insertUser = async(req, res) => {
     conversationService.insertUser(req, res)
 }
+
+exports.findConversationsByUserId = async(req, res) => {
+    conversationService.findConversationsByUserId(req, res)
+}

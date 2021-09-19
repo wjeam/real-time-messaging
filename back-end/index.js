@@ -8,40 +8,54 @@ const messageService = require('./services/message.service')
 const server = require('http').createServer(app)
 const io = require('socket.io')(server, {
     cors: {
-        origin: 'http://localhost:3000'
+        origin: 'http://localhost:8173'
     }
 })
 
-sockets = {}
+sockets = []
 
 io.on('connection', (socket) => {
-    console.log('CONNECTED')
+    console.log('Connected')
 
     user_id = socket.request._query['user_id']
-    conversation_id = socket.request._query['conversation_id']
 
-    console.log(sockets)
-    socket.on('message', (message) => {
-        messageService.createMessage({user_id: message.user_id, conversation_id: message.conversation_id, content: message.content})
-            .then((a) => io.emit("message", a))
-            .catch((err) => console.error(err))
-        }        
-    )   
-    
+    handleConnection(socket, user_id)
+
     socket.on('disconnect', () => {
-        console.log('DISCONNECTED')
+        handleDisconnect(socket)
     })
+    console.log(sockets)
 })
+
+const handleDisconnect = (socket) => {
+    console.log('Disconnected')
+    sockets.forEach((connection, index) => {
+        if(connection.socket_id === socket.id)
+            sockets.splice(index, 1)
+    })
+}
+
+const handleConnection = (socket, user_id) => {
+    let exists = false
+    
+    sockets.every((connection) => {
+        if(connection.user_id === user_id) 
+            exists = true
+    })
+
+    if (!exists)
+        sockets.push({user_id: user_id, socket_id: socket.id})
+}
 
 app.use(cookieParser())
 app.use(cors({
-    origin: 'http://localhost:3000',
+    origin: 'http://localhost:8173',
     credentials: true
 }))
 app.use(express.json())
 app.use(express.urlencoded({extended: true}))
 require('./routes')(app)
 
-server.listen(3030, () => {
-    console.log('Server running on port 3030.')
+server.listen(8172, () => {
+    console.log('Server running on port 8172.')
 })
