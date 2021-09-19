@@ -31,12 +31,12 @@ exports.insertUser = async (req, res) => {
 }
 
 exports.insertMessage = async (message) => {
-    return Conversation.updateOne(
+    await Conversation.findOneAndUpdate(
         { _id: message.conversation_id },
-        { $push: { messages: message.message_id } }
+        { $push: { messages: message.message_id } },
+        {new: true}
     )
 }
-
 
 exports.findConversationsByUserId = async (req, res) => {
     // TBI

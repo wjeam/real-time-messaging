@@ -1,5 +1,5 @@
-import React, {useState, useEffect} from "react"
-import { Grid, Paper, AppBar, Toolbar, List, ListItem, ListItemAvatar, ListItemText, Avatar, Button, TextField, Box, Card, CardActions, CardText, CardContent, Typography, CardHeader} from "@mui/material";
+import React, {useState, useEffect, useRef} from "react"
+import { Grid, Paper, AppBar, Toolbar, List, ListItem, ListItemAvatar, ListItemText, Avatar, Button, TextField, Typography } from "@mui/material";
 import  { deepOrange, deepPurple, lightBlue, lightGreen, red, blueGrey } from "@mui/material/colors";
 import { io } from "socket.io-client";
 import axios from "axios";
@@ -56,16 +56,43 @@ const Home = () => {
     const [messages, setMessages] = useState([])
     const [conversations, setConversations] = useState([])
 
+    const bottom = useRef(null)
+
+    const scrollToBottom = () => {
+        bottom.current?.scrollIntoView({ behaviour: "smooth"})
+    }
+
     useEffect(() => {
-        // setSocket(io("http://localhost:3030", {query: "user_id=12345"}))
-        getMessages("61429d1d222639af0b6f8115")
+        setSocket(
+            io("http://localhost:3030", {
+                query: {
+                    "user_id" : sessionStorage.getItem("user_id"),
+                }
+            })
+        )
+
+        getMessages("614696b413a529fdbebba68e")
         return () => {
             
         }
     }, [])
 
-    function ping() {
-        //socket.emit("message", {user_id: "12345", conversation_id: "54321", content: message})
+    useEffect(() => {
+        if (socket !== undefined)
+            socket.on("message", (newMessage) => {
+                setMessages(messages => [...messages, newMessage])
+            })
+        return () => {
+            
+        }
+    }, [socket])
+
+    useEffect(() => {
+        scrollToBottom()
+    }, [messages])
+
+    function ping(message) {
+        socket.emit("message", {content: message, user_id: sessionStorage.getItem("user_id"), conversation_id: "614696b413a529fdbebba68e"})
     }
 
     const getMessages = (conversation_id) => {
@@ -87,9 +114,12 @@ const Home = () => {
     }
 
     const formatDate = (date) => {
-        console.log(date)
         let formattedDate = moment(new Date(date)).format("YYYY/MM/DD @ HH:mm")
         return formattedDate
+    }
+
+    const handleFormChange = (event) => {
+        setMessage(event.target.value)
     }
 
     return (
@@ -101,35 +131,37 @@ const Home = () => {
             <Toolbar/>
             <Grid container justifyContent="flex-start">
                 <Grid item xs={6} sm={4} md={3} lg={2} xl={2}>
-                    <Typography variant="body"aper square elevation={3}>
-                        <List>
-                            {
-                            _conversations.map((conversation) => { 
-                                return (
-                                    <ListItem button style={{paddingTop: 0, paddingBottom: 0}}>
-                                        <ListItemAvatar>
-                                            <Avatar style={{backgroundColor: conversation.color}}>{conversation.initial}</Avatar>
-                                        </ListItemAvatar>
-                                        <ListItemText
-                                            primary={conversation.title}
-                                            style={{display: "inline"}}
-                                            secondary={conversation.content.substr(0, 50)+"..."}
-                                            className={conversation.message}
-                                        />
-                                    </ListItem>
-                                )
-                            })
-                            }
-                        </List>
-                    </Typography>
+                    <List>
+                        {
+                        _conversations.map((conversation, index) => { 
+                            return (
+                                <ListItem key={index} button style={{paddingTop: 0, paddingBottom: 0}}>
+                                    <ListItemAvatar>
+                                        <Avatar style={{backgroundColor: conversation.color}}>{conversation.initial}</Avatar>
+                                    </ListItemAvatar>
+                                    <ListItemText
+                                        primary={conversation.title}
+                                        style={{display: "inline"}}
+                                        secondary={conversation.content.substr(0, 50)+"..."}
+                                        className={conversation.message}
+                                        onClick={ping}
+                                    />
+                                </ListItem>
+                            )
+                        })
+                        }
+                    </List>
+                    <TextField id="standard-basic" label="MESSAGE" onChange={handleFormChange} defaultValue={message} variant="standard" />
+                    <Button variant="contained" onClick={() => {ping(message)}}>SEND</Button>
                 </Grid>
-                <Grid item xs={6} sm={8} md={9} lg={10} xl={10}>
+                <Grid item xs={6} sm={8} md={9} lg={10} xl={10} sx={{maxHeight: "700px", overflow: "auto"}}>
                     <Grid container sx={{flexDirection: "column"}}>
                         {
-                            messages.map((message) => {
-                                if(message.user_id !== localStorage.getItem("user_id")) {
+                            messages.map((message, index) => {
+                                if(message.user_id._id !== sessionStorage.getItem("user_id")) {
                                     return (
-                                        <Grid item xs={12} sm={12} md={8} lg={8} xl={5} sx={{textAlign: "start", marginBottom: "10px", alignSelf: "flex-start", ml: 3, mt: 3}}>
+                                        <Grid key={index} item xs={12} sm={12} md={8} lg={8} xl={5} sx={{textAlign: "start", mb: 3, alignSelf: "flex-start", ml: 3, mt: 3}}>
+                                            <Typography variant="body" style={{color: "#CAD3C8", fontStyle: "italic"}}>{message.user_id.username}</Typography>
                                             <Paper elevation={3} sx={{backgroundColor: "#95ECEC", padding: "5px 10px 5px 10px", mt: "3px", mr: "10px", display: "table"}}>
                                                 <Typography variant="body1" style={{color: "black", margin: "5px 0 5px 0"}}>{message.content}</Typography>
                                             </Paper>
@@ -138,17 +170,18 @@ const Home = () => {
                                     )
                                 } else {
                                     return (
-                                        <Grid item xs={12} sm={12} md={8} lg={8} xl={5} sx={{textAlign: "end", marginBottom: "10px", alignSelf: "flex-end", mr: 3, mt: 3}}>
-                                            <Paper elevation={3} sx={{backgroundColor: "#95C1EC", padding: "5px 10px 5px 10px", mt: "3px", ml: 18, display: "table"}}>
+                                        <Grid key={index} item xs={12} sm={12} md={8} lg={8} xl={5} sx={{mb: 3, alignSelf: "flex-end", mr: 3, mt: 3}}>
+                                            <Paper elevation={3} sx={{backgroundColor: "#95C1EC", padding: "5px 10px 5px 10px",  ml: "auto", mt: "3px", display: "table"}}>
                                                 <Typography variant="body1" style={{color: "black", margin: "5px 0 5px 0"}}>{message.content}</Typography>
                                             </Paper>
-                                            <Typography variant="body" style={{color: "#CAD3C8", fontStyle: "italic"}}>Sent on {formatDate(message.creation_date)}</Typography>
+                                            <Typography variant="body" style={{color: "#CAD3C8", fontStyle: "italic", display: "table", width: "100%", textAlign: "right"}}>Sent on {formatDate(message.creation_date)}</Typography>
                                         </Grid>
                                     )
                                 }
                             })
                         }
                     </Grid>
+                    <div ref={bottom}></div>
                 </Grid>
             </Grid>
         </div>

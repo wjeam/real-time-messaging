@@ -3,6 +3,7 @@ const app = express()
 const database = require('./database')()
 const cors = require('cors')
 const cookieParser = require('cookie-parser')
+const messageService = require('./services/message.service')
 
 const server = require('http').createServer(app)
 const io = require('socket.io')(server, {
@@ -11,14 +12,21 @@ const io = require('socket.io')(server, {
     }
 })
 
+sockets = {}
+
 io.on('connection', (socket) => {
     console.log('CONNECTED')
-    console.log(socket.id)
-    console.log(socket.request._query['user_id'])
 
-    socket.on('message', (data) => {
-        console.log(data)
-    })   
+    user_id = socket.request._query['user_id']
+    conversation_id = socket.request._query['conversation_id']
+
+    console.log(sockets)
+    socket.on('message', (message) => {
+        messageService.createMessage({user_id: message.user_id, conversation_id: message.conversation_id, content: message.content})
+            .then((a) => io.emit("message", a))
+            .catch((err) => console.error(err))
+        }        
+    )   
     
     socket.on('disconnect', () => {
         console.log('DISCONNECTED')
