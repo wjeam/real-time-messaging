@@ -3,8 +3,8 @@ const app = express()
 const database = require('./database')()
 const cors = require('cors')
 const cookieParser = require('cookie-parser')
+const conversationService = require('./services/conversation.service')
 const messageService = require('./services/message.service')
-
 const server = require('http').createServer(app)
 const io = require('socket.io')(server, {
     cors: {
@@ -20,6 +20,23 @@ io.on('connection', (socket) => {
     user_id = socket.request._query['user_id']
 
     handleConnection(socket, user_id)
+
+    socket.on("message", (data) => {
+        conversationService.findUsersFromConversationId(data.conversation_id)
+        .then((result) => {
+            users = result[0].users
+            users.forEach((user) => {
+                sockets.forEach((socket) => {
+                    if(socket.user_id == user._id){
+                        message = messageService.createMessage(data)
+                        .then((message) => {
+                            io.to(socket.socket_id).emit("message", message)
+                        })
+                    }
+                })
+            })
+        })
+    })
 
     socket.on('disconnect', () => {
         handleDisconnect(socket)

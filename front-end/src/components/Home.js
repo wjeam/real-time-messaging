@@ -9,7 +9,6 @@ const Home = () => {
     const [message, setMessage] = useState("")
     const [conversations, setConversations] = useState([])
     const [conversation, setConversation] = useState()
-    const [messages, setMessages] = useState([])
 
     const bottom = useRef(null)
 
@@ -32,17 +31,21 @@ const Home = () => {
     }, [])
 
     useEffect(() => {
+        if(socket !== undefined) {
+            socket.on("message", (data) => {
 
-    }, [])
+            })
+        }
+    }, [socket])
 
     useEffect(() => {
         scrollToBottom()
-    }, [messages])
+    }, [conversation])
 
     const getConversations = () => {
         axios({
             method: "GET",
-            url: "http://localhost:8172/conversations/614733db15281451dbf33826"
+            url: "http://localhost:8172/conversations/"+sessionStorage.getItem("user_id")
         })
         .then((response) => {
             setConversations(response.data)
@@ -54,18 +57,17 @@ const Home = () => {
 
     const sendMessage = () => {
         if(socket !== undefined){
-            socket.emit("message", {user_id: sessionStorage.getItem("user_id"), content: message, conversation_id: conversation._id})
+            socket.emit("message", {user_id: sessionStorage.getItem("user_id"), content: message, conversation_id: conversations[conversation]._id})
         }
     }
 
     const changeConversation = (event) => {
         const index = event.currentTarget.getAttribute("index")
-        setMessages(conversations[index].messages)
-        setConversation(conversations[index])
+        setConversation(index)
     }  
 
     const formatDate = (date) => {
-        let formattedDate = moment(new Date(date)).format("YYYY/MM/DD @ HH:mm")
+        const formattedDate = moment(new Date(date)).format("YYYY/MM/DD @ HH:mm")
         return formattedDate
     }
 
@@ -105,8 +107,8 @@ const Home = () => {
                 </Grid>
                 <Grid item xs={6} sm={8} md={9} lg={10} xl={10} sx={{maxHeight: "700px", overflow: "auto"}}>
                     <Grid container sx={{flexDirection: "column"}}>
-                    {
-                        messages.map((message, index) => {
+                    {conversations && conversation && 
+                        conversations[conversation].messages.map((message, index) => {
                             if(message.user_id._id !== sessionStorage.getItem("user_id")) {
                                 return (
                                     <Grid key={index} item xs={12} sm={12} md={8} lg={8} xl={5} sx={{textAlign: "start", mb: 3, alignSelf: "flex-start", ml: 3, mt: 3}}>

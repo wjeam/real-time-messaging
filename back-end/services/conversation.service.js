@@ -15,6 +15,17 @@ exports.createConversation = async (req, res) => {
     })
 }
 
+exports.findUsersFromConversationId = async (conversation_id) => {
+    return Conversation.find(
+        { _id: conversation_id }
+    )
+    .populate({
+        "path" : "users",
+        "select": "-password -email -__v -creation_date -profile_image -username"
+    })
+    .select('-messages -creation_date -password -title -__v -_id')
+}
+
 exports.insertUser = async (req, res) => {
     const dto = req.body
     Conversation.updateOne(
@@ -35,6 +46,7 @@ exports.insertMessage = async (message) => {
         { _id: message.conversation_id },
         { $push: { messages: message.message_id } }
     )
+    .catch((error) => {console.error(error)})
 }
 
 exports.findConversationsByUserId = async (req, res) => {
@@ -47,15 +59,11 @@ exports.findConversationsByUserId = async (req, res) => {
     .populate({
         path: 'messages',
         populate: {
-            path: 'user_id'
+            path: 'user_id',
+            select: '-password'
         }
     })
     .then((result) => {
-        result.forEach((conversation) => {
-            conversation.messages.forEach((message) => {
-                message.user_id = cleanUser(message.user_id)
-            })
-        })
         res.status(200).send(result)
     })
     .catch((error) => {
@@ -64,9 +72,3 @@ exports.findConversationsByUserId = async (req, res) => {
     })
 }
 
-function cleanUser(user) {
-    user.password = undefined
-    user.email = undefined
-    user.creation_date = undefined
-    return user
-}

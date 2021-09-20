@@ -16,10 +16,10 @@ exports.createMessage = async (data) => {
         return newMessage
     })
 
-    message = await message.populate('user_id')
-    message.user_id.creation_date = undefined
-    message.user_id.password = undefined
-    return message
+    return await message.populate({
+        path: 'user_id',
+        select: '-password'
+    })
 }
 
 exports.test = async(req, res) => {
@@ -29,7 +29,6 @@ exports.test = async(req, res) => {
             message_id: newMessage._id, 
             conversation_id: newMessage.conversation_id 
         }
-        
         insertMessage(data)
     })
     .catch((error) => console.error(error))
@@ -42,12 +41,11 @@ exports.findMessagesByConversationId = async(req, res) => {
             conversation_id: conversation_id
         }
     )
-    .populate('user_id')
+    .populate({
+        path: 'user_id',
+        select: '-password'
+    })
     .then((messages) => {
-        messages.forEach(message => {
-            message.user_id.password = undefined
-            message.user_id.creation_date = undefined
-        })
         res.status(200).send(messages)
     })
     .catch((error) => {
