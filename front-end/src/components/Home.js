@@ -63,7 +63,7 @@ const Home = () => {
     }
 
     const sendMessage = () => {
-        if(socket !== undefined){
+        if(socket !== undefined && activeConversation){
             socket.emit("message", {user_id: sessionStorage.getItem("user_id"), content: message, conversation_id: conversations.current[activeConversation]._id})
         }
     }
