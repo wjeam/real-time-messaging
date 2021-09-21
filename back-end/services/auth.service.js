@@ -37,5 +37,5 @@ exports.signToken = async (res, _id, email) => {
         httpOnly: false,
         sameSite: true
     })
-    res.status(200)
+    res.status(200).send('')
 }

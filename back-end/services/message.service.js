@@ -22,18 +22,6 @@ exports.createMessage = async (data) => {
     })
 }
 
-exports.test = async(req, res) => {
-    Message.create(req.body)
-    .then((newMessage) => {
-        data = {
-            message_id: newMessage._id, 
-            conversation_id: newMessage.conversation_id 
-        }
-        insertMessage(data)
-    })
-    .catch((error) => console.error(error))
-}
-
 exports.findMessagesByConversationId = async(req, res) => {
     const conversation_id = req.params.conversation_id
     Message.find(

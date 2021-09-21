@@ -7,11 +7,11 @@ exports.createConversation = async (req, res) => {
     const conversation = req.body
     Conversation.create(conversation)
     .then(() => {
-        res.status(200)
+        res.status(200).send('')
     })
     .catch((error) => {
         console.error(error)
-        res.status(400)
+        res.status(400).send('')
     })
 }
 
@@ -20,24 +20,24 @@ exports.findUsersFromConversationId = async (conversation_id) => {
         { _id: conversation_id }
     )
     .populate({
-        "path" : "users",
-        "select": "-password -email -__v -creation_date -profile_image -username"
+        'path' : 'users',
+        'select': '-password -email -__v -creation_date -profile_image -username'
     })
     .select('-messages -creation_date -password -title -__v -_id')
 }
 
 exports.insertUser = async (req, res) => {
-    const dto = req.body
+    const obj = req.body
     Conversation.updateOne(
         { _id: obj.conversation_id },
         { $addToSet: {users: obj.user_id}}
     )
     .then(() => {
-        res.status(200)
+        res.status(200).send('')
     })
     .catch((error) => {
         console.error(error)
-        res.status(400)
+        res.status(400).send('')
     })
 }
 

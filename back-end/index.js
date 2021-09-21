@@ -22,17 +22,17 @@ io.on('connection', (socket) => {
     handleConnection(socket, user_id)
 
     socket.on("message", (data) => {
-        conversationService.findUsersFromConversationId(data.conversation_id)
-        .then((result) => {
-            users = result[0].users
-            users.forEach((user) => {
-                sockets.forEach((socket) => {
-                    if(socket.user_id == user._id){
-                        message = messageService.createMessage(data)
-                        .then((message) => {
+        message = messageService.createMessage(data)
+        .then((message) => {
+            conversationService.findUsersFromConversationId(data.conversation_id)
+            .then((result) => {
+                users = result[0].users
+                users.forEach((user) => {
+                    sockets.forEach((socket) => {
+                        if(socket.user_id == user._id){
                             io.to(socket.socket_id).emit("message", message)
-                        })
-                    }
+                        }
+                    })
                 })
             })
         })
