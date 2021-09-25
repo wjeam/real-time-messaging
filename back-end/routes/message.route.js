@@ -1,6 +1,8 @@
-
-const messageController = require('../controllers/message.controller')
+const messageController = require("../controllers/message.controller");
 
 module.exports = (app) => {
-    app.get('/messages/:conversation_id', messageController.findMessageByConversationId)
-}
+  app.get(
+    "/messages/:conversation_id",
+    messageController.findMessageByConversationId
+  );
+};
