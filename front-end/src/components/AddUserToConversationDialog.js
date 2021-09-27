@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import axios from "axios";
 import {
   Dialog,
@@ -85,9 +85,9 @@ const AddUserToConversationDialog = ({
               minWidth: "200px",
             }}
           >
-            {conversations.current.map((conversation) => {
+            {conversations.current.map((conversation, index) => {
               return (
-                <MenuItem value={conversation._id}>
+                <MenuItem key={index} value={conversation._id}>
                   {conversation.title}
                 </MenuItem>
               );

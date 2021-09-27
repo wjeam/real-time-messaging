@@ -18,6 +18,7 @@ import {
 } from "@mui/material";
 import { io } from "socket.io-client";
 import axios from "axios";
+import useSound from "use-sound";
 import moment from "moment";
 import Cookies from "js-cookie";
 import { useHistory } from "react-router-dom";
@@ -26,6 +27,7 @@ import CreateConversationDialog from "./CreateConversationDialog";
 import ExitToAppIcon from "@mui/icons-material/ExitToApp";
 import AddIcon from "@mui/icons-material/Add";
 import PersonAddIcon from "@mui/icons-material/PersonAdd";
+import notificationSoundEffect from "../sounds/notification.mp3";
 
 const Home = () => {
   const [socket, setSocket] = useState();
@@ -38,6 +40,7 @@ const Home = () => {
     showAddUserToConversation: false,
     showCreateConversation: false,
   });
+  const [play, { stop }] = useSound(notificationSoundEffect);
 
   const history = useHistory();
 
@@ -60,6 +63,7 @@ const Home = () => {
 
   useEffect(() => {
     scrollToBottom();
+    play();
   }, [conversations.current, activeConversation]);
 
   const connectSocketIO = () => {
@@ -154,28 +158,31 @@ const Home = () => {
     forceUpdate();
   };
 
+  const handleDeleteConversationDialog = (e) => {
+    e.preventDefault();
+    console.log(e);
+  };
+
   return (
     <>
       <AppBar position="fixed" color="inherit">
         <Toolbar>
-          <IconButton>
-            <AddIcon
-              ml={5}
-              onClick={() => {
-                handleDialogs("showCreateConversation", true);
-              }}
-            />
+          <IconButton
+            onClick={() => {
+              handleDialogs("showCreateConversation", true);
+            }}
+          >
+            <AddIcon ml={5} />
           </IconButton>
-          <IconButton>
-            <PersonAddIcon
-              ml={5}
-              onClick={() => {
-                handleDialogs("showAddUserToConversation", true);
-              }}
-            />
+          <IconButton
+            onClick={() => {
+              handleDialogs("showAddUserToConversation", true);
+            }}
+          >
+            <PersonAddIcon ml={5} />
           </IconButton>
-          <IconButton sx={{ ml: "auto" }}>
-            <ExitToAppIcon ml={5} onClick={logout} />
+          <IconButton sx={{ ml: "auto" }} onClick={logout}>
+            <ExitToAppIcon ml={5} />
           </IconButton>
         </Toolbar>
       </AppBar>
@@ -198,6 +205,9 @@ const Home = () => {
             {conversations.current.map((conversation, index) => {
               return (
                 <ListItem
+                  onContextMenu={(e) => {
+                    handleDeleteConversationDialog(e);
+                  }}
                   onClick={changeConversation}
                   index={index}
                   key={index}
@@ -360,47 +370,54 @@ const Home = () => {
                   }
                 }
               )}
-            <Grid container justifyContent="center">
-              <Paper
-                elevation={10}
-                sx={{
-                  position: "fixed",
-                  bottom: "1%",
-                  maxWidth: "90%",
-                  width: "80%",
-                  backgroundColor: "rgba(220, 222, 224, 0.5)",
-                }}
-              >
-                <Grid container>
-                  <Grid item lg={9} xs={6} pl={2} pr={2}>
-                    <TextField
-                      id="standard-basic"
-                      multiline
-                      fullWidth
-                      maxRows={5}
-                      onChange={handleMessageChange}
-                      sx={{ textAlign: "center" }}
-                      value={message}
-                      variant="standard"
-                    />
+            {activeConversation && (
+              <Grid container justifyContent="center">
+                <Paper
+                  elevation={10}
+                  sx={{
+                    position: "fixed",
+                    bottom: "1%",
+                    maxWidth: "90%",
+                    width: "80%",
+                    backgroundColor: "rgba(220, 222, 224, 0.5)",
+                  }}
+                >
+                  <Grid container>
+                    <Grid item lg={9} xs={6} pl={2} pr={2}>
+                      <TextField
+                        id="standard-basic"
+                        multiline
+                        fullWidth
+                        maxRows={1}
+                        onChange={handleMessageChange}
+                        sx={{ textAlign: "center" }}
+                        value={message}
+                        onKeyUp={(e) => {
+                          {
+                            if (e.key === "Enter") sendMessage();
+                          }
+                        }}
+                        variant="standard"
+                      />
+                    </Grid>
+                    <Grid item lg={3} xs={6} sx={{ m: "0 auto" }}>
+                      <Button
+                        onClick={sendMessage}
+                        fullWidth
+                        color="inherit"
+                        variant="text"
+                        sx={{
+                          height: "100%",
+                          backgroundColor: "rgba(210, 212, 214, 0.5)",
+                        }}
+                      >
+                        Send
+                      </Button>
+                    </Grid>
                   </Grid>
-                  <Grid item lg={3} xs={6} sx={{ m: "0 auto" }}>
-                    <Button
-                      onClick={sendMessage}
-                      fullWidth
-                      color="inherit"
-                      variant="text"
-                      sx={{
-                        height: "100%",
-                        backgroundColor: "rgba(210, 212, 214, 0.5)",
-                      }}
-                    >
-                      Send
-                    </Button>
-                  </Grid>
-                </Grid>
-              </Paper>
-            </Grid>
+                </Paper>
+              </Grid>
+            )}
           </Grid>
           {jwtPayload !== undefined && (
             <>

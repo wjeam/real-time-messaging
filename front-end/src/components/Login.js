@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import {
   Dialog,
-  DialogTitle,
   Button,
   DialogContent,
   DialogContentText,
@@ -21,7 +20,7 @@ const Login = () => {
 
   useEffect(() => {
     if (Cookies.get("access_token")) history.push("/home");
-  }, []);
+  }, [history]);
 
   const handleClose = (_, reason) => {
     if (reason === "backdropClick") {
