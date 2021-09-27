@@ -5,8 +5,6 @@ const cors = require("cors");
 const cookieParser = require("cookie-parser");
 const conversationService = require("./services/conversation.service");
 const messageService = require("./services/message.service");
-const { resolve } = require("path");
-const { rejects } = require("assert");
 const server = require("http").createServer(app);
 const io = require("socket.io")(server, {
   cors: {

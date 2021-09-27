@@ -27,6 +27,8 @@ import CreateConversationDialog from "./CreateConversationDialog";
 import ExitToAppIcon from "@mui/icons-material/ExitToApp";
 import AddIcon from "@mui/icons-material/Add";
 import PersonAddIcon from "@mui/icons-material/PersonAdd";
+import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
+import EditIcon from "@mui/icons-material/Edit";
 import notificationSoundEffect from "../sounds/notification.mp3";
 
 const Home = () => {
@@ -419,6 +421,42 @@ const Home = () => {
               </Grid>
             )}
           </Grid>
+          {activeConversation && (
+            <Grid container justifyContent="center">
+              <Paper
+                elevation={3}
+                sx={{
+                  backgroundColor: "rgba(220, 222, 224, 0.2)",
+                  minWidth: "450px",
+                  position: "fixed",
+                  top: "10%",
+                }}
+              >
+                <Grid container alignItems="center">
+                  <Grid item lg={6} xl={6}>
+                    <Typography variant="h5" sx={{ fontSize: "18px" }}>
+                      {conversations.current[activeConversation].title}
+                    </Typography>
+                  </Grid>
+                  <Grid item lg={4} xl={2}>
+                    <IconButton>
+                      <ExitToAppIcon />
+                    </IconButton>
+                  </Grid>
+                  <Grid item lg={4} xl={2}>
+                    <IconButton>
+                      <EditIcon />
+                    </IconButton>
+                  </Grid>
+                  <Grid item lg={4} xl={2}>
+                    <IconButton>
+                      <DeleteOutlineIcon />
+                    </IconButton>
+                  </Grid>
+                </Grid>
+              </Paper>
+            </Grid>
+          )}
           {jwtPayload !== undefined && (
             <>
               <AddUserToConversationDialog
