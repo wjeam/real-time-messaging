@@ -81,7 +81,7 @@ const Login = () => {
             variant="standard"
           />
           <Link href="/register" underline="hover" fontStyle="italic">
-            Don't have an account? Click here to register
+            New here? Click here to register
           </Link>
         </DialogContent>
         <DialogActions sx={{ mt: 0, mb: 0 }}>
