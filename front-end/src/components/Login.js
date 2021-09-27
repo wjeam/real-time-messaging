@@ -1,38 +1,98 @@
-
-import React, { useEffect } from 'react'
-import { FormControl, Input, InputLabel, Paper, Grid, Button, Typography, Stack } from '@mui/material';
-import { Box } from '@mui/system';
+import React, { useEffect, useState } from "react";
+import {
+  Dialog,
+  DialogTitle,
+  Button,
+  DialogContent,
+  DialogContentText,
+  TextField,
+  Typography,
+  Link,
+  DialogActions,
+} from "@mui/material";
+import axios from "axios";
+import { useHistory } from "react-router-dom";
+import Cookies from "js-cookie";
 
 const Login = () => {
-    useEffect(() => {
-        //const socket = io("ws://localhost:3030")
-    }, [])
+  const [open, setOpen] = useState(true);
+  const [form, setForm] = useState({ identifier: "", password: "" });
+  const history = useHistory();
 
-    return (
-        <div>
-            <Grid container direction="row" justifyContent="center">
-                <Grid item md={4} sm={8} xs={8} lg={4}>
-                    <Paper elevation={3} style={{paddingBottom: "25px", paddingTop: "25px"}}>
-                        <Stack spacing={3} alignItems="center" >
-                            <Typography variant="h2" component="div" align="center">Login</Typography>
-                            <FormControl sx={{maxWidth: "100%", width: "300px"}}>
-                                <InputLabel htmlFor="identifier">Username or E-mail</InputLabel>
-                                <Input type="email" id="identifier"/>
-                            </FormControl>
-                            <FormControl sx={{maxWidth: "100%", width: "300px"}}>
-                                <InputLabel htmlFor="password">Password</InputLabel>
-                                <Input type="password" id="password"/>
-                            </FormControl>
-                            <Box>
-                                <Button color="primary" variant="contained" sx={{marginRight: "5px"}}>LOGIN</Button>
-                                <Button color="success" variant="contained" sx={{marginLeft: "5px"}}>REGISTER</Button>
-                            </Box>
-                        </Stack>
-                    </Paper>
-                </Grid>
-            </Grid>
-        </div>
-    )
-}
+  useEffect(() => {
+    if (Cookies.get("access_token")) history.push("/home");
+  }, []);
+
+  const handleClose = (_, reason) => {
+    if (reason === "backdropClick") {
+      setOpen(false);
+    }
+  };
+
+  const handleFormChange = (event) => {
+    setForm((form) => ({
+      ...form,
+      [event.target.id]: event.target.value,
+    }));
+  };
+
+  const login = () => {
+    axios({
+      url: "http://localhost:8172/login",
+      withCredentials: true,
+      method: "POST",
+      data: form,
+    })
+      .then((response) => {
+        setOpen(false);
+        history.push("/home");
+      })
+      .catch((error) => {
+        console.error(error);
+      });
+  };
+
+  return (
+    <>
+      <Dialog open={open} onClose={handleClose}>
+        <Typography variant="h4" sx={{ ml: 3, mt: 3 }}>
+          Login
+        </Typography>
+        <DialogContent sx={{ mt: 0, mb: 0, maxWidth: "450px" }}>
+          <DialogContentText>
+            Enter your e-mail/username and password to login
+          </DialogContentText>
+          <TextField
+            autoFocus
+            id="identifier"
+            label="Username or e-mail"
+            type="text"
+            onChange={handleFormChange}
+            value={form.identifier}
+            fullWidth
+            variant="standard"
+          />
+          <TextField
+            id="password"
+            label="Password"
+            type="password"
+            onChange={handleFormChange}
+            value={form.password}
+            fullWidth
+            variant="standard"
+          />
+          <Link href="/register" underline="hover" fontStyle="italic">
+            Don't have an account? Click here to register
+          </Link>
+        </DialogContent>
+        <DialogActions sx={{ mt: 0, mb: 0 }}>
+          <Button sx={{ mt: 0, mb: 0 }} onClick={login}>
+            Login
+          </Button>
+        </DialogActions>
+      </Dialog>
+    </>
+  );
+};
 
 export default Login;

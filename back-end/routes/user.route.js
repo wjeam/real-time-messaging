@@ -1,4 +1,5 @@
 const userController = require("../controllers/user.controller.js");
+const userService = require("../services/user.service");
 const verifyTokenMiddleware =
   require("../services/auth.service").verifyTokenMiddleware;
 

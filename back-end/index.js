@@ -5,6 +5,8 @@ const cors = require("cors");
 const cookieParser = require("cookie-parser");
 const conversationService = require("./services/conversation.service");
 const messageService = require("./services/message.service");
+const { resolve } = require("path");
+const { rejects } = require("assert");
 const server = require("http").createServer(app);
 const io = require("socket.io")(server, {
   cors: {
@@ -36,6 +38,24 @@ io.on("connection", (socket) => {
           });
         });
     });
+  });
+
+  socket.on("logout", (data) => {
+    handleDisconnect(socket, data.user_id);
+  });
+
+  socket.on("add_conversation", (data) => {
+    conversationService
+      .findConversationById(data.conversation_id)
+      .then((conversation) => {
+        sockets.every((socket) => {
+          if (socket.user_id === data.user_id) {
+            io.to(socket.socket_id).emit("add_conversation", conversation);
+            return false;
+          }
+          return true;
+        });
+      });
   });
 
   socket.on("disconnect", () => {
