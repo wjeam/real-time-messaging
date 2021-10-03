@@ -1,3 +1,5 @@
+const Message = require("./message");
+
 module.exports = (mongoose) => {
   const Conversation = new mongoose.Schema({
     title: { type: String, required: true, default: "New conversation" },

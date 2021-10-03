@@ -14,7 +14,7 @@ const CreateConversationDialog = ({
   userId,
   open,
   close,
-  onAddNewConversation,
+  onCreateConversation,
 }) => {
   const [form, setForm] = useState({ title: "" });
   const handleFormChange = (event) => {
@@ -35,12 +35,17 @@ const CreateConversationDialog = ({
       data: { title: form.title, users: [userId] },
     })
       .then((response) => {
-        onAddNewConversation(response.data);
+        onCreateConversation(response.data);
+        resetForm();
         close();
       })
       .catch((error) => {
         console.error(error);
       });
+  };
+
+  const resetForm = () => {
+    setForm({ title: "" });
   };
 
   return (

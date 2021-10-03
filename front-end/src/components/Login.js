@@ -16,6 +16,7 @@ import Cookies from "js-cookie";
 const Login = () => {
   const [open, setOpen] = useState(true);
   const [form, setForm] = useState({ identifier: "", password: "" });
+  const [errorMessage, setErrorMessage] = useState();
   const history = useHistory();
 
   useEffect(() => {
@@ -42,12 +43,16 @@ const Login = () => {
       method: "POST",
       data: form,
     })
-      .then((response) => {
+      .then((_) => {
         setOpen(false);
         history.push("/home");
       })
       .catch((error) => {
-        console.error(error);
+        const status = error.response.status;
+        if (status === 401)
+          setErrorMessage("The password you've provided is invalid.");
+        if (status === 404)
+          setErrorMessage("The e-mail/username provided does not exists.");
       });
   };
 
@@ -61,6 +66,9 @@ const Login = () => {
           <DialogContentText>
             Enter your e-mail/username and password to login
           </DialogContentText>
+          <Typography variant="subtitle1" color="red">
+            {errorMessage}
+          </Typography>
           <TextField
             autoFocus
             id="identifier"

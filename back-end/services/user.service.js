@@ -17,7 +17,7 @@ exports.register = async (req, res) => {
     .then((user) => {
       user = user[0] || req.body;
       if (user?._id) {
-        res.status(401).send("E-mail or username already exists.");
+        res.status(409).send("E-mail or username already exists.");
       } else {
         auth
           .encryptPassword(user.password)
@@ -31,13 +31,16 @@ exports.register = async (req, res) => {
     .catch((error) => console.error(error));
 };
 
-async function createAccount(res, user) {
+const createAccount = async (res, user) => {
   User.create(user)
     .then(() => {
       res.status(200).send("Account created");
     })
-    .catch((error) => console.error(error));
-}
+    .catch((error) => {
+      res.status(400).send("Error creating account");
+      console.error(error);
+    });
+};
 
 exports.findByUsernameOrEmail = async (req, res) => {
   return User.findOne({
@@ -66,15 +69,23 @@ exports.login = async (req, res) => {
           .validatePassword(req.body.password, user.password)
           .then((isValid) => {
             if (isValid) {
-              auth.signToken(res, user._id, user.email);
+              auth.signToken(res, user._id, user.email, user.username);
             } else {
               res.status(401).send("Password incorrect");
             }
           })
-          .catch((error) => console.log(error));
+          .catch((error) => {
+            res
+              .status(400)
+              .send("Error comparing passwords, please try again later");
+            console.error(error);
+          });
       } else {
-        res.status(200).send("Account not found");
+        res.status(404).send("Account not found");
       }
     })
-    .catch((error) => console.log(error));
+    .catch((error) => {
+      res.status(400).send("Error logging you in, please try again later");
+      console.error(error);
+    });
 };

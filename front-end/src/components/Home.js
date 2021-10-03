@@ -13,8 +13,8 @@ import {
   TextField,
   Typography,
   Box,
-  Icon,
   IconButton,
+  Tooltip,
 } from "@mui/material";
 import { io } from "socket.io-client";
 import axios from "axios";
@@ -30,19 +30,22 @@ import PersonAddIcon from "@mui/icons-material/PersonAdd";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import EditIcon from "@mui/icons-material/Edit";
 import notificationSoundEffect from "../sounds/notification.mp3";
+import ConversationContextDialog from "./ConversationContextDialog";
 
 const Home = () => {
   const [socket, setSocket] = useState();
   const [message, setMessage] = useState("");
   const conversations = useRef([]);
-  const [activeConversation, setActiveConversation] = useState();
+  const [activeConversation, setActiveConversation] = useState(undefined);
   const [, forceUpdate] = useReducer((x) => x + 1, 0);
-  const [jwtPayload, setJwtPayload] = useState(undefined);
+  const [jwtPayload, setJwtPayload] = useState();
   const [dialogs, setDialogs] = useState({
     showAddUserToConversation: false,
     showCreateConversation: false,
+    showConversationContextDialog: false,
   });
-  const [play, { stop }] = useSound(notificationSoundEffect);
+  const [play] = useSound(notificationSoundEffect);
+  const containerRef = useRef(undefined);
 
   const history = useHistory();
 
@@ -53,14 +56,35 @@ const Home = () => {
   };
 
   useEffect(() => {
+    const verifyToken = (jwtToken) => {
+      axios({
+        method: "GET",
+        url: "http://localhost:8172/auth/verifyToken",
+        withCredentials: true,
+      })
+        .then((isTokenValid) => {
+          if (!isTokenValid.data) deleteCookieAndRedirect();
+          else
+            setJwtPayload(
+              JSON.parse(Buffer.from(jwtToken.split(".")[1], "base64"))
+            );
+        })
+        .catch((error) => console.error(error));
+    };
+
     const jwtToken = Cookies.get("access_token");
     if (jwtToken === undefined) history.push("/login");
-    else
-      setJwtPayload(JSON.parse(Buffer.from(jwtToken.split(".")[1], "base64")));
+    else verifyToken(jwtToken);
   }, []);
 
   useEffect(() => {
-    if (jwtPayload !== undefined) getConversations();
+    const fetchPayload = async () => {
+      if (jwtPayload !== undefined) {
+        await getConversations();
+        connectSocketIO();
+      }
+    };
+    fetchPayload();
   }, [jwtPayload]);
 
   useEffect(() => {
@@ -75,12 +99,10 @@ const Home = () => {
           user_id: jwtPayload._id,
         },
       })
-        .on("message", (message) => {
-          updateMessages(message);
-        })
-        .on("add_conversation", (conversation) => {
-          onAddNewConversation(conversation);
-        })
+        .on("message", onNewMessage)
+        .on("add_conversation", onCreateConversation)
+        .on("clear_conversation", onClearConversation)
+        .on("change_title_conversation", onConversationTitleChange)
     );
   };
 
@@ -88,7 +110,7 @@ const Home = () => {
     setDialogs((dialogs) => ({ ...dialogs, [dialogName]: state }));
   };
 
-  const updateMessages = (message) => {
+  const onNewMessage = (message) => {
     conversations.current.forEach((conversation, index) => {
       if (conversation._id === message.conversation_id) {
         let tempConversations = conversations.current.slice();
@@ -105,8 +127,13 @@ const Home = () => {
     history.push("/login");
   };
 
+  const deleteCookieAndRedirect = () => {
+    Cookies.remove("access_token");
+    history.push("/login");
+  };
+
   const sendMessage = () => {
-    if (message.length === 0) return;
+    if (message.replace(/\s/g, "").length === 0) return;
     if (socket !== undefined && activeConversation) {
       socket.emit("message", {
         user_id: jwtPayload._id,
@@ -131,61 +158,135 @@ const Home = () => {
     setMessage(event.target.value);
   };
 
-  const getConversations = async () => {
-    await axios({
-      method: "GET",
-      url: "http://localhost:8172/conversations/" + jwtPayload._id,
-    })
-      .then((response) => {
-        conversations.current = response.data;
-      })
-      .catch((error) => {
-        console.error(error);
-      });
-
-    connectSocketIO();
-  };
-
-  const onAddUserToConversation = (user_id, conversation_id) => {
-    socket.emit("add_conversation", {
-      user_id: user_id,
-      conversation_id: conversation_id,
+  const onClearConversation = (data) => {
+    conversations.current.every((conversation, index) => {
+      if (conversation._id === data.conversation_id) {
+        conversations.current[index].messages = [];
+        forceUpdate();
+        return false;
+      }
+      return true;
     });
   };
 
-  const onAddNewConversation = (conversation) => {
+  const onConversationTitleChange = (data) => {
+    conversations.current.every((conversation) => {
+      if (conversation._id === data.conversation_id) {
+        conversation.title = data.title;
+        return false;
+      }
+      return true;
+    });
+    forceUpdate();
+  };
+
+  const changeConversationTitle = (title, conversation_id) => {
+    socket.emit("change_title_conversation", {
+      conversation_id: conversation_id,
+      title: title,
+    });
+  };
+
+  const getConversations = () => {
+    const fetchData = async () => {
+      await axios({
+        method: "GET",
+        url: "http://localhost:8172/conversations/" + jwtPayload._id,
+      })
+        .then((response) => {
+          conversations.current = response.data;
+          forceUpdate();
+        })
+        .catch((error) => {
+          console.error(error);
+        });
+    };
+    fetchData();
+  };
+
+  const onCreateConversation = (conversation) => {
     let tempConversations = conversations.current.slice();
     tempConversations.push(conversation);
     conversations.current = tempConversations;
     forceUpdate();
   };
 
-  const handleDeleteConversationDialog = (e) => {
-    e.preventDefault();
-    console.log(e);
+  const onAddUserToConversation = (user_id, conversation_id, identifier) => {
+    socket.emit("add_conversation", {
+      user_id: user_id,
+      conversation_id: conversation_id,
+      identifier: identifier,
+    });
+  };
+
+  const clearConversation = () => {
+    const conversation_id = conversations.current[activeConversation]._id;
+    axios({
+      method: "POST",
+      url: "http://localhost:8172/conversation/clear",
+      data: { conversation_id: conversation_id },
+    })
+      .then(() => {
+        socket.emit("clear_conversation", { conversation_id: conversation_id });
+      })
+      .catch((error) => console.error(error));
+  };
+
+  const quitConversation = () => {
+    const conversation_id = conversations.current[activeConversation]._id;
+    axios({
+      method: "POST",
+      url: "http://localhost:8172/conversation/leave",
+      data: {
+        user_id: jwtPayload._id,
+        conversation_id: conversation_id,
+      },
+    })
+      .then((response) => {
+        if (response.status === 200) {
+          setActiveConversation(undefined);
+          getConversations();
+          socket.emit("leave_conversation", {
+            conversation_id: conversation_id,
+            username: jwtPayload.username,
+          });
+        }
+      })
+      .catch((error) => console.error(error));
   };
 
   return (
     <>
       <AppBar position="fixed" color="inherit">
         <Toolbar>
-          <IconButton
-            onClick={() => {
-              handleDialogs("showCreateConversation", true);
-            }}
-          >
-            <AddIcon ml={5} />
-          </IconButton>
-          <IconButton
-            onClick={() => {
-              handleDialogs("showAddUserToConversation", true);
-            }}
-          >
-            <PersonAddIcon ml={5} />
-          </IconButton>
-          <IconButton sx={{ ml: "auto" }} onClick={logout}>
-            <ExitToAppIcon ml={5} />
-          </IconButton>
+          <Tooltip title="Create conversation">
+            <IconButton
+              onClick={() => {
+                handleDialogs("showCreateConversation", true);
+              }}
+            >
+              <AddIcon ml={5} />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title="Add user to conversation">
+            <IconButton
+              onClick={() => {
+                handleDialogs("showAddUserToConversation", true);
+              }}
+            >
+              <PersonAddIcon ml={5} />
+            </IconButton>
+          </Tooltip>
+          {jwtPayload && (
+            <Typography sx={{ ml: "auto" }} variant="overline">
+              @{jwtPayload.username}
+            </Typography>
+          )}
+          <Tooltip title="Log out">
+            <IconButton onClick={logout}>
+              <ExitToAppIcon ml={5} />
+            </IconButton>
+          </Tooltip>
         </Toolbar>
       </AppBar>
       <Toolbar />
@@ -207,14 +308,14 @@ const Home = () => {
             {conversations.current.map((conversation, index) => {
               return (
                 <ListItem
-                  onContextMenu={(e) => {
-                    handleDeleteConversationDialog(e);
-                  }}
                   onClick={changeConversation}
                   index={index}
                   key={index}
                   button
-                  sx={{ paddingTop: 0, paddingBottom: 0 }}
+                  sx={{
+                    mb: 0.5,
+                    mt: 0.5,
+                  }}
                 >
                   <ListItemAvatar>
                     <Avatar>
@@ -223,7 +324,9 @@ const Home = () => {
                   </ListItemAvatar>
                   <ListItemText
                     primary={conversation.title}
-                    sx={{ display: "inline" }}
+                    sx={{
+                      display: "inline",
+                    }}
                     secondary={
                       conversation.messages.length > 0
                         ? conversation.messages[
@@ -245,18 +348,69 @@ const Home = () => {
           lg={10}
           xl={10}
           sx={{ overflowY: "scroll", maxHeight: "93vh", minHeight: "93vh" }}
+          ref={containerRef}
         >
           <Grid
             container
             pb={5}
             sx={{
               flexDirection: "column",
+              mt: 10,
             }}
           >
             {activeConversation &&
               conversations.current[activeConversation].messages.map(
                 (message, index) => {
-                  if (message.user_id._id !== jwtPayload._id) {
+                  if (message.user_id.username === "system") {
+                    return (
+                      <Grid
+                        key={index}
+                        item
+                        xs={12}
+                        sm={12}
+                        md={8}
+                        lg={8}
+                        xl={5}
+                        sx={{
+                          mb: 3,
+                          alignSelf: "center",
+                          mr: 3,
+                          mt: 3,
+                          wordWrap: "break-word",
+                          wordBreak: "break-all",
+                        }}
+                      >
+                        <Tooltip title={formatDate(message.creation_date)}>
+                          <Paper
+                            elevation={3}
+                            sx={{
+                              backgroundColor: "#dfe6e9",
+                              padding: "0px 10px 0px 10px",
+                              ml: "auto",
+                              mt: "3px",
+                              display: "table",
+                              wordWrap: "break-word",
+                              wordBreak: "break-all",
+                            }}
+                          >
+                            <Typography
+                              variant="body1"
+                              sx={{
+                                textAlign: "left",
+                                color: "black",
+                                fontSize: "10px",
+                                margin: "5px 0 5px 0",
+                                wordWrap: "break-word",
+                                wordBreak: "break-all",
+                              }}
+                            >
+                              {message.content}
+                            </Typography>
+                          </Paper>
+                        </Tooltip>
+                      </Grid>
+                    );
+                  } else if (message.user_id._id !== jwtPayload._id) {
                     return (
                       <Grid
                         key={index}
@@ -274,41 +428,45 @@ const Home = () => {
                           mt: 3,
                         }}
                       >
-                        <Typography
-                          variant="body"
-                          sx={{ color: "#B6B8BA", fontsx: "italic" }}
-                        >
-                          {message.user_id.username}
-                        </Typography>
-                        <Paper
-                          elevation={3}
-                          sx={{
-                            backgroundColor: "#ff7979",
-                            padding: "5px 10px 5px 10px",
-                            mt: "3px",
-                            mr: "10px",
-                            display: "table",
-                          }}
-                        >
-                          <Typography
-                            variant="body1"
-                            sx={{
-                              textAlign: "left",
-                              color: "black",
-                              margin: "5px 0 5px 0",
-                              wordWrap: "break-word",
-                              wordBreak: "break-all",
-                            }}
+                        <Box>
+                          <Tooltip title={message.user_id.username}>
+                            <Avatar sx={{ ml: 0, mr: 2, float: "left" }}>
+                              {message.user_id.username
+                                .toUpperCase()
+                                .substring(0, 2)}
+                            </Avatar>
+                          </Tooltip>
+                          <Tooltip
+                            title={
+                              "Sent on " + formatDate(message.creation_date)
+                            }
                           >
-                            {message.content}
-                          </Typography>
-                        </Paper>
-                        <Typography
-                          variant="body"
-                          sx={{ color: "#B6B8BA", fontsx: "italic" }}
-                        >
-                          Sent on {formatDate(message.creation_date)}
-                        </Typography>
+                            <Paper
+                              elevation={3}
+                              sx={{
+                                backgroundColor: "#ff7979",
+                                padding: "5px 10px 5px 10px",
+                                mt: "3px",
+                                mr: "10px",
+                                float: "none",
+                                display: "table",
+                              }}
+                            >
+                              <Typography
+                                variant="body1"
+                                sx={{
+                                  textAlign: "left",
+                                  color: "black",
+                                  margin: "5px 0 5px 0",
+                                  wordWrap: "break-word",
+                                  wordBreak: "break-all",
+                                }}
+                              >
+                                {message.content}
+                              </Typography>
+                            </Paper>
+                          </Tooltip>
+                        </Box>
                       </Grid>
                     );
                   } else {
@@ -330,43 +488,35 @@ const Home = () => {
                           wordBreak: "break-all",
                         }}
                       >
-                        <Paper
-                          elevation={3}
-                          sx={{
-                            backgroundColor: "#95C1EC",
-                            padding: "5px 10px 5px 10px",
-                            ml: "auto",
-                            mt: "3px",
-                            display: "table",
-                            wordWrap: "break-word",
-                            wordBreak: "break-all",
-                          }}
+                        <Tooltip
+                          title={"Sent on " + formatDate(message.creation_date)}
                         >
-                          <Typography
-                            variant="body1"
+                          <Paper
+                            elevation={3}
                             sx={{
-                              textAlign: "left",
-                              color: "black",
-                              margin: "5px 0 5px 0",
+                              backgroundColor: "#95C1EC",
+                              padding: "5px 10px 5px 10px",
+                              ml: "auto",
+                              mt: "3px",
+                              display: "table",
                               wordWrap: "break-word",
                               wordBreak: "break-all",
                             }}
                           >
-                            {message.content}
-                          </Typography>
-                        </Paper>
-                        <Typography
-                          variant="body"
-                          sx={{
-                            color: "#B6B8BA",
-                            fontsx: "italic",
-                            display: "table",
-                            width: "100%",
-                            textAlign: "right",
-                          }}
-                        >
-                          Sent on {formatDate(message.creation_date)}
-                        </Typography>
+                            <Typography
+                              variant="body1"
+                              sx={{
+                                textAlign: "left",
+                                color: "black",
+                                margin: "5px 0 5px 0",
+                                wordWrap: "break-word",
+                                wordBreak: "break-all",
+                              }}
+                            >
+                              {message.content}
+                            </Typography>
+                          </Paper>
+                        </Tooltip>
                       </Grid>
                     );
                   }
@@ -426,32 +576,42 @@ const Home = () => {
               <Paper
                 elevation={3}
                 sx={{
-                  backgroundColor: "rgba(220, 222, 224, 0.2)",
+                  backgroundColor: "rgba(220, 222, 224, 0.5)",
                   minWidth: "450px",
                   position: "fixed",
                   top: "10%",
                 }}
               >
                 <Grid container alignItems="center">
-                  <Grid item lg={6} xl={6}>
+                  <Grid item lg={6} xs={6} sm={6} xl={6}>
                     <Typography variant="h5" sx={{ fontSize: "18px" }}>
                       {conversations.current[activeConversation].title}
                     </Typography>
                   </Grid>
-                  <Grid item lg={4} xl={2}>
-                    <IconButton>
-                      <ExitToAppIcon />
-                    </IconButton>
+                  <Grid item lg={2} xs={2} sm={2} xl={2}>
+                    <Tooltip title="Quit conversation">
+                      <IconButton onClick={quitConversation}>
+                        <ExitToAppIcon />
+                      </IconButton>
+                    </Tooltip>
                   </Grid>
-                  <Grid item lg={4} xl={2}>
-                    <IconButton>
-                      <EditIcon />
-                    </IconButton>
+                  <Grid item lg={2} xs={2} sm={2} xl={2}>
+                    <Tooltip title="Edit conversation title">
+                      <IconButton
+                        onClick={() => {
+                          handleDialogs("showConversationContextDialog", true);
+                        }}
+                      >
+                        <EditIcon />
+                      </IconButton>
+                    </Tooltip>
                   </Grid>
-                  <Grid item lg={4} xl={2}>
-                    <IconButton>
-                      <DeleteOutlineIcon />
-                    </IconButton>
+                  <Grid item lg={2} xs={2} sm={2} xl={2}>
+                    <Tooltip title="Delete messages">
+                      <IconButton onClick={clearConversation}>
+                        <DeleteOutlineIcon />
+                      </IconButton>
+                    </Tooltip>
                   </Grid>
                 </Grid>
               </Paper>
@@ -469,12 +629,25 @@ const Home = () => {
               />
               <CreateConversationDialog
                 open={dialogs.showCreateConversation}
-                onAddNewConversation={onAddNewConversation}
+                onCreateConversation={onCreateConversation}
                 close={() => {
                   handleDialogs("showCreateConversation", false);
                 }}
                 userId={jwtPayload._id}
               />
+              {conversations.current[activeConversation] !== undefined && (
+                <ConversationContextDialog
+                  open={dialogs.showConversationContextDialog}
+                  container={containerRef.current}
+                  conversation_id={
+                    conversations.current[activeConversation]._id
+                  }
+                  changeConversationTitle={changeConversationTitle}
+                  close={() => {
+                    handleDialogs("showConversationContextDialog", false);
+                  }}
+                />
+              )}
             </>
           )}
           <div ref={bottom}></div>

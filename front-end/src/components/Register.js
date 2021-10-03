@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Dialog,
   Button,
@@ -15,7 +15,10 @@ import { useHistory } from "react-router-dom";
 const Register = () => {
   const [open, setOpen] = useState(true);
   const [form, setForm] = useState({ username: "", email: "", password: "" });
+  const [errorMessage, setErrorMessage] = useState();
   const history = useHistory();
+  const [valid, setValid] = useState(false);
+  const whitespaceRegex = /\s/;
 
   const handleClose = (_, reason) => {
     if (reason === "backdropClick") {
@@ -30,18 +33,35 @@ const Register = () => {
     }));
   };
 
+  useEffect(() => {
+    if (
+      whitespaceRegex.test(form.email) ||
+      whitespaceRegex.test(form.username) ||
+      whitespaceRegex.test(form.password)
+    ) {
+      setValid(false);
+      setErrorMessage("Fields cannot contain spaces");
+    } else {
+      setValid(true);
+      setErrorMessage("");
+    }
+  }, [form]);
+
   const register = () => {
+    if (!valid) return;
     axios({
       url: "http://localhost:8172/register",
       withCredentials: true,
       method: "POST",
       data: form,
     })
-      .then((response) => {
+      .then(() => {
+        setErrorMessage("");
         setOpen(false);
         history.push("/login");
       })
       .catch((error) => {
+        setErrorMessage("E-mail or username already exists.");
         console.error(error);
       });
   };
@@ -56,6 +76,9 @@ const Register = () => {
           <DialogContentText>
             Fill out this form to have access to our chatting platform.
           </DialogContentText>
+          <Typography variant="subtitle1" color="red">
+            {errorMessage}
+          </Typography>
           <TextField
             autoFocus
             id="username"
@@ -69,7 +92,7 @@ const Register = () => {
           <TextField
             id="email"
             label="Email Address"
-            type="email"
+            type="text"
             onChange={handleFormChange}
             value={form.email}
             fullWidth
@@ -84,7 +107,7 @@ const Register = () => {
             fullWidth
             variant="standard"
           />
-          <Link underline="hover" href="/login">
+          <Link underline="hover" sx={{ fontStyle: "italic" }} href="/login">
             Already have an account? Press here to login.
           </Link>
         </DialogContent>

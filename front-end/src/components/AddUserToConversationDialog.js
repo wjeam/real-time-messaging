@@ -34,8 +34,12 @@ const AddUserToConversationDialog = ({
     if (reason === "backdropClick") close();
   };
 
-  const addUserToConversation = async () => {
-    await axios({
+  const resetForm = () => {
+    setForm({ identifier: "", conversation_id: "" });
+  };
+
+  const addUserToConversation = () => {
+    axios({
       method: "POST",
       url: "http://localhost:8172/conversation/user",
       data: {
@@ -45,8 +49,9 @@ const AddUserToConversationDialog = ({
     })
       .then((response) => {
         const user_id = response.data;
+        resetForm();
         close();
-        onAddUserToConversation(user_id, form.conversation_id);
+        onAddUserToConversation(user_id, form.conversation_id, form.identifier);
       })
       .catch((error) => {
         console.error(error);

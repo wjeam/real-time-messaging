@@ -1,5 +1,6 @@
 const mongoose = require("mongoose");
 const models = require("../models")(mongoose);
+const bcrypt = require("bcrypt");
 
 require("dotenv").config();
 

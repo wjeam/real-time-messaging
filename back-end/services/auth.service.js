@@ -16,25 +16,25 @@ exports.verifyTokenMiddleware = async (req, res, next) => {
     const verify = jwt.verify(token, process.env.JWT_SECRET);
     next();
   } catch (error) {
-    res.status(403);
+    res.status(403).send("You don't have access to this content");
   }
 };
 
 exports.verifyToken = async (req, res) => {
   try {
-    const verify = jwt.verify(req.body.access_token, process.env.JWT_SECRET);
-    res.send(true);
+    const verify = jwt.verify(req.cookies.access_token, process.env.JWT_SECRET);
+    res.status(200).send(true);
   } catch (error) {
-    res.send(false);
+    res.status(200).send(false);
   }
 };
 
-exports.signToken = async (res, _id, email) => {
-  const token = jwt.sign({ _id, email }, process.env.JWT_SECRET, {
-    expiresIn: 3600,
+exports.signToken = async (res, _id, email, username) => {
+  const token = jwt.sign({ _id, email, username }, process.env.JWT_SECRET, {
+    expiresIn: 1000,
   });
   res.cookie("access_token", token, {
-    maxAge: 1000 * 60 * 15,
+    maxAge: 1000000,
     httpOnly: false,
     sameSite: true,
   });
